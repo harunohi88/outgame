@@ -363,6 +363,8 @@ namespace Unity.FPS.AI
             var vfx = Instantiate(DeathVfx, DeathVfxSpawnPoint.position, Quaternion.identity);
             Destroy(vfx, 5f);
 
+            CurrencyManager.Instance.Add(ECurrencyType.Gold, 100);
+            
             // tells the game flow manager to handle the enemy destuction
             m_EnemyManager.UnregisterEnemy(this);
 
@@ -371,6 +373,7 @@ namespace Unity.FPS.AI
             {
                 Instantiate(LootPrefab, transform.position, Quaternion.identity);
             }
+            
 
             // this will call the OnDestroy function
             Destroy(gameObject, DeathDuration);
