@@ -13,6 +13,12 @@ public class CurrencyDTO
         Value = currency.Value;
     }
 
+    public CurrencyDTO(ECurrencyType type, int value)
+    {
+        Type = type;
+        Value = value;
+    }
+
     // 이정도는 DTO에서 제공해도 됨
     public bool HaveEnough(int value)
     {
