@@ -21,18 +21,59 @@ public class AchievementManager : BehaviourSingleton<AchievementManager>
     public void Init()
     {
         _achievements = new List<Achievement>();
-        
+        _repository = new AchievementRepository();
+
+        // 저장된 업적 데이터 로드
+        AchievementRepository repository = new AchievementRepository();
+        List<AchievementSaveData> savedDataList = repository.Load();
+
+        // 빠른 조회를 위한 딕셔너리 구성
+        Dictionary<string, AchievementSaveData> savedMap = new Dictionary<string, AchievementSaveData>();
+        if (savedDataList != null)
+        {
+            foreach (var data in savedDataList)
+            {
+                savedMap[data.ID] = data;
+            }
+        }
+
+        // 메타데이터를 기반으로 업적 초기화
         foreach (AchievementSO metaData in _metaDatas)
         {
-            Achievement achievement = new Achievement(
-                metaData.Id,
-                metaData.Name,
-                metaData.Description,
-                metaData.Condition,
-                metaData.GoalValue,
-                metaData.RewardCurrencyType,
-                metaData.RewardAmount
+            Achievement achievement;
+
+            if (savedMap.TryGetValue(metaData.Id, out AchievementSaveData saved))
+            {
+                // 저장된 데이터를 기반으로 업적 복원
+                int parsedValue = 0;
+                int.TryParse(saved.CurrentValue, out parsedValue); // 안정성 보장
+
+                achievement = new Achievement(
+                    metaData.Id,
+                    metaData.Name,
+                    metaData.Description,
+                    metaData.Condition,
+                    metaData.GoalValue,
+                    metaData.RewardCurrencyType,
+                    metaData.RewardAmount,
+                    parsedValue,
+                    saved.RewardClaimed
                 );
+            }
+            else
+            {
+                // 저장 데이터가 없는 경우 초기값으로 생성
+                achievement = new Achievement(
+                    metaData.Id,
+                    metaData.Name,
+                    metaData.Description,
+                    metaData.Condition,
+                    metaData.GoalValue,
+                    metaData.RewardCurrencyType,
+                    metaData.RewardAmount
+                );
+            }
+
             _achievements.Add(achievement);
         }
     }
@@ -46,7 +87,8 @@ public class AchievementManager : BehaviourSingleton<AchievementManager>
                 achievement.Increase(value);
             }
         }
-        
+     
+        _repository.Save(Achievements);
         OnDataChanged?.Invoke();
     }
 
@@ -60,6 +102,8 @@ public class AchievementManager : BehaviourSingleton<AchievementManager>
         {
             CurrencyManager.Instance.Add(achievementDto.RewardCurrencyType, achievementDto.RewardAmount);
         }
+        
+        _repository.Save(Achievements);
         OnDataChanged?.Invoke();
     }
     
